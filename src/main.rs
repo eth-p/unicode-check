@@ -1,26 +1,25 @@
 extern crate clap;
 extern crate unicode_normalization;
 
-use unicode_normalization::{is_nfc,is_nfkd,is_nfkc,is_nfd};
-use std::str::from_utf8;
+use clap::Clap;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
-use clap::Clap;
+use std::process::exit;
+use std::str::from_utf8;
+use unicode_normalization::{is_nfc, is_nfd, is_nfkc, is_nfkd};
 
 #[derive(Clap)]
 struct Opts {
-
     /// The file to check
     file: String,
 
     /// Show the result for each of the different normalization checks
     #[clap(long, short = "v")]
-    verbose: bool
-
+    verbose: bool,
 }
 
-fn check(name: &String, verbose: bool) -> Result<(), Box<dyn Error>> {
+fn check(name: &String, verbose: bool) -> Result<bool, Box<dyn Error>> {
     let mut file = File::open(name)?;
     let mut data = Vec::new();
     file.read_to_end(&mut data)?;
@@ -41,20 +40,27 @@ fn check(name: &String, verbose: bool) -> Result<(), Box<dyn Error>> {
         println!();
     }
 
-    if result_nfc && result_nfd && result_nfkd && result_nfkc {
-        println!("{} is normalized.", name);
-    } else {
-        println!("{} is NOT normalized.", name);
-    }
-
-    Ok(())
+    Ok(result_nfc && result_nfd && result_nfkd && result_nfkc)
 }
 
-fn main()  {
+fn main() {
     let opts: Opts = Opts::parse();
 
     let result = check(&opts.file, opts.verbose);
-    if result.is_err() {
-        eprintln!("{:}: {:}", opts.file, result.unwrap_err())
+    match result {
+        Err(error) => {
+            eprintln!("{:}: {:}", opts.file, error);
+            exit(2)
+        }
+
+        Ok(normalized) => {
+            if normalized {
+                println!("{} is normalized.", opts.file);
+                exit(0)
+            } else {
+                println!("{} is NOT normalized.", opts.file);
+                exit(1)
+            }
+        }
     }
 }
