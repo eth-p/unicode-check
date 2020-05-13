@@ -1,0 +1,9 @@
+[package]
+name = "unicode-check"
+version = "0.1.0"
+authors = ["Ethan P. <eth-p@hidden.email>"]
+edition = "2018"
+
+[dependencies]
+unicode-normalization = "0.1.8"
+clap = "3.0.0-beta.1"
